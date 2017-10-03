@@ -33,23 +33,23 @@ const hydrogen = `<!DOCTYPE html>
 </body>
 </html>`
 
-let contentArray = [hydrogen, helium];
+let content = {"hydrogen": hydrogen, "helium": helium};
 
 const server = net.createServer((request) => {
 
   request.on('data', (data) => {
     // console.log(data);
     let message = data.toString().split("\r\n");
-    console.log(message);
+    // console.log(message);
 
     let reqLine = message[0].split(" ");
-    console.log(reqLine);
+    // console.log(reqLine);
     let method = reqLine[0];
     let reqURI = reqLine[1];
-    console.log(reqURI);
+    // console.log(reqURI);
     let httpV = reqLine[2];
 
-    makeResponse(method, reqURI);
+    console.log(makeResponse(method, reqURI));
 
   });
 });
@@ -58,10 +58,21 @@ server.listen(8080, () => {
   console.log('listening on port 8080');
 });
 
-function makeResponse(meth, uri){
-  contentArray.forEach((element) => {
-    if(uri === (`/${element}.html`)){
-      request.write(element);
+function makeResponse(uri){
+  let date = new Date().toString();
+  let element = null;
+  for(let key in content){
+    if(uri === `/${key}.html`){
+      element = content[key];
+      // console.log(element);
+      return `HTTP/1.1 200 OK
+Server: MyServer
+Date: ${date}
+Content-Type: text/html; charset=utf-8
+Content-Length: ${element.length}
+Connection: keep-alive
+
+${element}`;
     }
-  })
+  }
 }
