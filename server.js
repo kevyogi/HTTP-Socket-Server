@@ -38,7 +38,9 @@ const server = net.createServer((request) => {
     let element = null;
     let status = null;
     let length = null;
+    let count = 0;
     for(let key in content){
+      count++;
       if(reqURI === key){
         status = "200 OK"
         return fs.readFile(key, 'utf8', (err, data) => {
@@ -55,6 +57,24 @@ Connection: keep-alive
 ${element}`;
           console.log(output);
           request.write(output, (err) => {
+            request.end();
+          });
+        });
+      }else if(reqURI !== key && count === 4){
+        status = "404 Not Found"
+        return fs.readFile('./404.html', 'utf8', (err, data) => {
+          element = data;
+          length = data.length;
+          let output1 = `HTTP/1.1 ${status}
+Server: MyServer
+Date: ${date}
+Content-Type: text/html; charset=utf-8
+Content-Length: ${length}
+Connection: keep-alive
+
+${element}`;
+          console.log(output1);
+          request.write(output1, (err) => {
             request.end();
           });
         });
