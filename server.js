@@ -1,56 +1,66 @@
 const net = require('net');
 const fs = require('fs');
+const path = require('path');
 
-const helium = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>The Elements - Helium</title>
-  <link rel="stylesheet" href="/css/styles.css">
-</head>
-<body>
-  <h1>Helium</h1>
-  <h2>H</h2>
-  <h3>Atomic number 2</h3>
-  <p>Helium is a chemical element with symbol He and atomic number 2. It is a colorless, odorless, tasteless, non-toxic, inert, monatomic gas that heads the noble gas group in the periodic table. Its boiling and melting points are the lowest among all the elements and it exists only as a gas except in extremely cold conditions.</p>
-  <p><a href="/">back</a></p>
-</body>
-</html>`
+// let filePath = path.join(__dirname, '..', 'public' 'test.txt');
+// console.log(filePath);
 
-const hydrogen = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>The Elements - Hydrogen</title>
-  <link rel="stylesheet" href="/css/styles.css">
-</head>
-<body>
-  <h1>Hydrogen</h1>
-  <h2>H</h2>
-  <h3>Atomic number 1</h3>
-  <p>Hydrogen is a chemical element with chemical symbol H and atomic number 1. With an atomic weight of 1.00794 u, hydrogen is the lightest element on the periodic table. Its monatomic form (H) is the most abundant chemical substance in the universe, constituting roughly 75% of all baryonic mass. Non-remnant stars are mainly composed of hydrogen in its plasma state. The most common isotope of hydrogen, termed protium (name rarely used, symbol 1H), has a single proton and zero neutrons.</p>
-  <p><a href="/">back</a></p>
-</body>
-</html>`
+// let fileContents;
 
-let content = {"hydrogen": hydrogen, "helium": helium};
+// fs.readFile(filePath, (err, data) => {
+
+// })
+
+// console.log(fileContents);
+
+let content = {"./hydrogen.html": "hydrogen", "./helium.html": "helium", "./index.html": "index", "./css/styles.css": "css"};
 
 const server = net.createServer((request) => {
+
+  // server.getConnections(function(err, count){
+  //   request.write('What is your request?\n');
+  // });
 
   request.on('data', (data) => {
     // console.log(data);
     let message = data.toString().split("\r\n");
-    // console.log(message);
+    console.log(message);
 
     let reqLine = message[0].split(" ");
     // console.log(reqLine);
     let method = reqLine[0];
-    let reqURI = reqLine[1];
-    // console.log(reqURI);
+    let reqURI = `.${reqLine[1]}`;
+    console.log(reqURI);
     let httpV = reqLine[2];
 
-    console.log(makeResponse(method, reqURI));
+    // makeResponse(reqURI);
+    let date = new Date().toString();
+    let element = null;
+    let status = null;
+    let length = null;
+    for(let key in content){
+      if(reqURI === key){
+        status = "200 OK"
+        return fs.readFile(key, 'utf8', (err, data) => {
+          if (err) throw err;
+          element = data;
+          length = data.length;
+          let output = `HTTP/1.1 ${status}
+Server: MyServer
+Date: ${date}
+Content-Type: text/html; charset=utf-8
+Content-Length: ${length}
+Connection: keep-alive
 
+${element}`;
+          console.log(output);
+          request.write(output, (err) => {
+            request.end();
+          });
+        });
+      }
+    }
+    console.log("hello");
   });
 });
 
@@ -58,21 +68,53 @@ server.listen(8080, () => {
   console.log('listening on port 8080');
 });
 
-function makeResponse(uri){
-  let date = new Date().toString();
-  let element = null;
-  for(let key in content){
-    if(uri === `/${key}.html`){
-      element = content[key];
-      // console.log(element);
-      return `HTTP/1.1 200 OK
-Server: MyServer
-Date: ${date}
-Content-Type: text/html; charset=utf-8
-Content-Length: ${element.length}
-Connection: keep-alive
+// function makeResponse(uri){
+//   let date = new Date().toString();
+//   let element = null;
+//   let status = null;
+//   for(let key in content){
+//     if(uri === key){
+//       status = "200 OK"
+//       return fs.readFile(key, 'utf8', (err, data) => {
+//         console.log("inside readFile");
+//         console.log(data);
+//         if (err) throw err;
+//         // console.log(data.toString());
+//         element = data;
+//         // console.log(element);
+//         return `HTTP/1.1 ${status}
+// Server: MyServer
+// Date: ${date}
+// Content-Type: text/html; charset=utf-8
+// Content-Length:
+// Connection: keep-alive
 
-${element}`;
+// ${element}`;
+//       });
+//     }
+//   }
+// }
+
+function read(element, cb){
+  let filePath = path.join(__dirname, element);
+  fs.readFile(filePath, 'uft8', (err, data) => {
+    if (err) { return cb(err); }
+
+    response += fileContents;
+
+    fin(socket, response, (err) => {
+      if(err) { console.log(err); }
+      return cb(data);
+    })
+  });
+}
+
+function fin(socket, data, cb){
+  socket.write(response, (err) => {
+    if (err) { return cb(err); }
+    else {
+      socket.end();
+      return cb;
     }
-  }
+  })
 }
