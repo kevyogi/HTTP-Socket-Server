@@ -26,7 +26,7 @@ server.connect(8080, '0.0.0.0', () => {
     let newReq = buildRequest("HEAD", host, uri);
     server.write(newReq);
     server.pipe(process.stdout);
-  }else if(initialReq){
+  }else{
     console.log("You gotta give some to get some.");
     server.end();
   }

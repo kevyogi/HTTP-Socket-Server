@@ -11,6 +11,9 @@ const server = net.createServer((request) => {
     let reqLine = message[0].split(" ");
     let method = reqLine[0];
     let reqURI = `.${reqLine[1]}`;
+    if(reqURI === "./"){
+      reqURI = "./index.html";
+    }
     let httpV = reqLine[2];
     let date = new Date().toString();
     let element = null;
@@ -32,8 +35,7 @@ Date: ${date}
 Content-Type: text/html; charset=utf-8
 Content-Length: ${length}
 Connection: keep-alive\n\n`;
-          let body = `${element}\n`;
-          let both = `HTTP/1.1 ${status}
+          let output = `HTTP/1.1 ${status}
 Server: MyServer
 Date: ${date}
 Content-Type: text/html; charset=utf-8
@@ -42,7 +44,7 @@ Connection: keep-alive
 
 ${element}\n`
           if(method === "GET"){
-            request.write(both, (err) => {
+            request.write(output, (err) => {
               request.end();
             });
           }else if(method === "HEAD"){
