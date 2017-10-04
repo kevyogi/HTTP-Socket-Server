@@ -24,7 +24,7 @@ const server = net.createServer((request) => {
   request.on('data', (data) => {
     // console.log(data);
     let message = data.toString().split("\r\n");
-    console.log(message);
+    // console.log(message);
 
     let reqLine = message[0].split(" ");
     // console.log(reqLine);
@@ -47,6 +47,29 @@ const server = net.createServer((request) => {
           if (err) throw err;
           element = data;
           length = data.length;
+          let head = `HTTP/1.1 ${status}
+Server: MyServer
+Date: ${date}
+Content-Type: text/html; charset=utf-8
+Content-Length: ${length}
+Connection: keep-alive\n`
+          let body = `${element}\n`;
+          // console.log(output);
+          if(method === "GET"){
+            request.write(body, (err) => {
+              request.end();
+            });
+          }else if(method === "HEAD"){
+            request.write(head, (err) => {
+              request.end();
+            });
+          }
+        });
+      }else if(reqURI !== key && count === 4){
+        status = "404 Not Found"
+        return fs.readFile('./404.html', 'utf8', (err, data) => {
+          element = data;
+          length = data.length;
           let output = `HTTP/1.1 ${status}
 Server: MyServer
 Date: ${date}
@@ -55,26 +78,8 @@ Content-Length: ${length}
 Connection: keep-alive
 
 ${element}\n`;
-          console.log(output);
+          // console.log(output);
           request.write(output, (err) => {
-            request.end();
-          });
-        });
-      }else if(reqURI !== key && count === 4){
-        status = "404 Not Found"
-        return fs.readFile('./404.html', 'utf8', (err, data) => {
-          element = data;
-          length = data.length;
-          let output1 = `HTTP/1.1 ${status}
-Server: MyServer
-Date: ${date}
-Content-Type: text/html; charset=utf-8
-Content-Length: ${length}
-Connection: keep-alive
-
-${element}\n`;
-          console.log(output1);
-          request.write(output1, (err) => {
             request.end();
           });
         });
