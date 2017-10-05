@@ -1,37 +1,77 @@
 const net = require('net');
 const fs = require('fs');
+let PORT = null;
+let HOST = null;
+
+// console.log(process.argv);
+let input = process.argv;
+if(input[2] && input[2].split(".")[0] === "www"){
+  PORT = 80;
+  HOST = input[2];
+}else{
+  PORT = 8080;
+  HOST = '0.0.0.0';
+}
 
 const server = new net.Socket();
 
-server.connect(8080, '0.0.0.0', () => {
-  console.log('connected to server');
-  let initialReq = process.argv.splice(2);
-  // console.log(initialReq.length);
-  // console.log(initialReq);
-  if(initialReq.length === 1){
-    let host = initialReq[0].split("/")[0];
-    let uri = initialReq[0].split("/")[1];
-    let newReq = buildRequest("GET", host, uri);
-    server.write(newReq, () => {
-      server.on('data', (data) => {
-        let response = data.toString();
-        let body = response.split(/\n\s*\n/);
-        process.stdout.write(body[1]);
-      })
-    });
-    // server.pipe(process.stdout);
-  }else if(initialReq.length === 2 && initialReq[0] === "-I"){
-    let host = initialReq[1].split("/")[0];
-    let uri = initialReq[1].split("/")[1];
-    let newReq = buildRequest("HEAD", host, uri);
-    server.write(newReq);
-    server.pipe(process.stdout);
-  }else{
-    console.log("You gotta give some to get some.");
-    server.end();
-  }
+server.connect(PORT, HOST, () => {
+  // console.log('connected to server');
+  // console.log(PORT, HOST);
+  let method;
+  let host;
+  let uri;
 
+  let cli = process.argv.splice(2);
+  if(cli.length === 0){
+    console.log("Try node client.js -help for more information");
+    server.end();
+  }else if(cli.length === 1){
+    if(cli[0].split("")[0] === "-"){
+      if(cli[0].split("-")[1] === "help"){
+        (process.stdout.write(`Usage: node client.js [options] <url>
+options: '-I' for header only\n`));
+        server.end();
+      }
+    }else if(cli[0].split("")[0] !== "-"){
+      if(cli[0].split("/").length === 2){
+        method = "GET";
+        host = cli[0];
+        uri = cli[0].split("/")[1];
+      }else{
+        method = "GET";
+        host = cli[0];
+        uri = "";
+      }
+      let newReq = buildRequest(method, host, uri);
+      // console.log(newReq);
+      server.write(newReq, () => {
+        server.on('data', (data) => {
+          let response = data.toString();
+          let message = response.split(/\n\s*\n/);
+          process.stdout.write(message[1]);
+          // server.end();
+        });
+      });
+    }
+  }else if(cli.length === 2){
+    if(cli[0].split("")[0] === "-"){
+      if(cli[0].split("")[1] === "I" && cli[1].split("/").length === 2){
+        method = "HEAD";
+        host = cli[1].split("/")[0];
+        uri = cli[1].split("/")[1];
+      }else{
+        method = "HEAD";
+        host = cli[1];
+        uri = "";
+      }
+      let newReq = buildRequest(method, host, uri);
+      server.write(newReq);
+      server.pipe(process.stdout);
+    }
+  }
 });
+
 
 server.on('end', () => {
   console.log('ended connection');
@@ -41,6 +81,9 @@ function buildRequest(method, host, uri, I){
   let request = `${method} /${uri} HTTP/1.1\r
 Date: ${new Date().toString()}\r
 Host: ${host}\r
-User-Agent: Test`
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36\n\n`
   return request;
 }
+
+
+
